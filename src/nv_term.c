@@ -1,5 +1,6 @@
 #include "nv_utils.h"
 #include "nv_term.h"
+#include "nv_key_parser.h"
 
 #if (defined(NV_TERM_W) && !defined(NV_TERM_H))                                \
     || (!defined(NV_TERM_W) && defined(NV_TERM_H))
@@ -40,23 +41,23 @@ static UcdCP _getKey(void) {
 static size_t _readEscapeSeq(int32_t *outBuf, size_t bufSize) {
     nvAssertExpr(bufSize >= 3);
     UcdCP key = _getKey();
-    if (key == TermKey_None) {
+    if (key == Key_None) {
         return 0;
     }
 
-    if (key != TermKey_Escape) {
+    if (key != Key_Escape) {
         outBuf[0] = key;
         return 1;
     }
 
     key = _getKey();
-    if (key == TermKey_Escape) {
+    if (key == Key_Escape) {
         // ESC ESC is the same as a single ESC
         outBuf[0] = key;
         return 1;
     }
     if (key != '[' && key != 'O') {
-        outBuf[0] = TermKey_Escape;
+        outBuf[0] = Key_Escape;
         g_queuedKey = key;
         return 1;
     }
@@ -70,7 +71,7 @@ static size_t _readEscapeSeq(int32_t *outBuf, size_t bufSize) {
         key = _getKey();
 
         // Ignore any incomplete sequences
-        if (key == TermKey_None) {
+        if (key == Key_None) {
             return 0;
         }
 
@@ -117,7 +118,7 @@ static size_t _readEscapeSeq(int32_t *outBuf, size_t bufSize) {
     return i < bufSize ? i : 0;
 }
 
-int32_t termGetKey(void) {
+Key termGetKey(void) {
 #define _SeqBufLen 32
     int32_t seq[_SeqBufLen] = { 0 };
     size_t seqLen = _readEscapeSeq(seq, _SeqBufLen);
@@ -134,33 +135,33 @@ int32_t termGetKey(void) {
             return 0;
         }
         switch (seq[1]) {
-        case 'A': return TermKey_ArrowUp;
-        case 'B': return TermKey_ArrowDown;
-        case 'C': return TermKey_ArrowRight;
-        case 'D': return TermKey_ArrowLeft;
-        case 'F': return TermKey_End;
-        case 'H': return TermKey_Home;
-        case 'P': return TermKey_F1;
-        case 'Q': return TermKey_F2;
-        case 'R': return TermKey_F3;
-        case 'S': return TermKey_F4;
-        case 't': return TermKey_F5;
-        case 'u': return TermKey_F6;
-        case 'v': return TermKey_F7;
-        case 'l': return TermKey_F8;
-        case 'w': return TermKey_F9;
-        case 'x': return TermKey_F10;
+        case 'A': return Key_ArrowUp;
+        case 'B': return Key_ArrowDown;
+        case 'C': return Key_ArrowRight;
+        case 'D': return Key_ArrowLeft;
+        case 'F': return Key_End;
+        case 'H': return Key_Home;
+        case 'P': return Key_F1;
+        case 'Q': return Key_F2;
+        case 'R': return Key_F3;
+        case 'S': return Key_F4;
+        case 't': return Key_F5;
+        case 'u': return Key_F6;
+        case 'v': return Key_F7;
+        case 'l': return Key_F8;
+        case 'w': return Key_F9;
+        case 'x': return Key_F10;
         default: return 0;
         }
     }
     nvAssertExpr(seq[0] == '[');
     switch (seq[seqLen - 1]) {
-    case 'A': return TermKey_ArrowUp;
-    case 'B': return TermKey_ArrowDown;
-    case 'C': return TermKey_ArrowRight;
-    case 'D': return TermKey_ArrowLeft;
-    case 'H': return TermKey_Home;
-    case 'F': return TermKey_End;
+    case 'A': return Key_ArrowUp;
+    case 'B': return Key_ArrowDown;
+    case 'C': return Key_ArrowRight;
+    case 'D': return Key_ArrowLeft;
+    case 'H': return Key_Home;
+    case 'F': return Key_End;
     case '~':
         if (seqLen < 2) {
             return 0 ;
@@ -168,23 +169,23 @@ int32_t termGetKey(void) {
         switch (seq[1]) {
             case 1:
             case 7:
-                return TermKey_Home;
+                return Key_Home;
             case 3:
-                return TermKey_Delete;
+                return Key_Delete;
             case 4:
-                return TermKey_End;
-            case 11: return TermKey_F1;
-            case 12: return TermKey_F2;
-            case 13: return TermKey_F3;
-            case 14: return TermKey_F4;
-            case 15: return TermKey_F5;
-            case 17: return TermKey_F6;
-            case 18: return TermKey_F7;
-            case 19: return TermKey_F8;
-            case 20: return TermKey_F9;
-            case 21: return TermKey_F10;
-            case 23: return TermKey_F11;
-            case 24: return TermKey_F12;
+                return Key_End;
+            case 11: return Key_F1;
+            case 12: return Key_F2;
+            case 13: return Key_F3;
+            case 14: return Key_F4;
+            case 15: return Key_F5;
+            case 17: return Key_F6;
+            case 18: return Key_F7;
+            case 19: return Key_F8;
+            case 20: return Key_F9;
+            case 21: return Key_F10;
+            case 23: return Key_F11;
+            case 24: return Key_F12;
             default: return 0;
         }
     default: return 0;

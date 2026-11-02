@@ -4,63 +4,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdint.h>
+#include "nv_key_parser.h"
 #include "unicode/nv_utf.h"
-
-// Special keys
-typedef enum TermKey {
-    TermKey_None = 0,
-    TermKey_CtrlA,
-    TermKey_CtrlB,
-    TermKey_CtrlC,
-    TermKey_CtrlD,
-    TermKey_CtrlE,
-    TermKey_CtrlF,
-    TermKey_CtrlG,
-    TermKey_CtrlH,
-    TermKey_CtrlI,
-    TermKey_CtrlJ,
-    TermKey_CtrlK,
-    TermKey_CtrlL,
-    TermKey_CtrlM,
-    TermKey_CtrlN,
-    TermKey_CtrlO,
-    TermKey_CtrlP,
-    TermKey_CtrlQ,
-    TermKey_CtrlR,
-    TermKey_CtrlS,
-    TermKey_CtrlT,
-    TermKey_CtrlU,
-    TermKey_CtrlV,
-    TermKey_CtrlW,
-    TermKey_CtrlX,
-    TermKey_CtrlY,
-    TermKey_CtrlZ,
-    TermKey_Tab = TermKey_CtrlI,
-    TermKey_Enter = TermKey_CtrlM,
-    TermKey_Escape = 0x1b,
-    TermKey_Backspace = 0x7f,
-    TermKey_ArrowLeft = 0x110000,
-    TermKey_ArrowRight,
-    TermKey_ArrowUp,
-    TermKey_ArrowDown,
-    TermKey_F1,
-    TermKey_F2,
-    TermKey_F3,
-    TermKey_F4,
-    TermKey_F5,
-    TermKey_F6,
-    TermKey_F7,
-    TermKey_F8,
-    TermKey_F9,
-    TermKey_F10,
-    TermKey_F11,
-    TermKey_F12,
-    TermKey_Home,
-    TermKey_End,
-    TermKey_Delete,
-
-    TermKey_MAX
-} TermKey;
 
 /******************** Initialization and deinitialization *********************/
 
@@ -80,7 +25,7 @@ bool termIsInit(void);
 // Get raw input characters, returns a negative value on error.
 UcdCP termGetInput(void);
 // Get key press, returns a negative value on error.
-int32_t termGetKey(void);
+Key termGetKey(void);
 // Read from the terminal.
 int64_t termRead(Utf8Ch *buf, size_t bufSize);
 

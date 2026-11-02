@@ -141,7 +141,7 @@ setTimeout:
 }
 
 void editorHandleKey(int32_t key) {
-    if (key == TermKey_None) return;
+    if (key == Key_None) return;
 
     if (g_ed.keyCount < EditorMaxBindLen) {
         g_ed.keys[g_ed.keyCount++] = key;
@@ -360,16 +360,16 @@ static void _addMovementMap(void) {
     mkCtxBind(g_mapMove, ctxCurMoveToTextStart, 'U');
     mkCtxBind(g_mapMove, ctxCurMoveToTextEnd, 'O');
 
-    bindAdd(g_mapMove, BindSeq(TermKey_CtrlI), (Bind){
+    bindAdd(g_mapMove, BindSeq(Key_CtrlI), (Bind){
         .callback = BindCBPtr(_callPanelCB, uiBufPanelMoveHalfUp)
     });
-    bindAdd(g_mapMove, BindSeq(TermKey_CtrlK), (Bind){
+    bindAdd(g_mapMove, BindSeq(Key_CtrlK), (Bind){
         .callback = BindCBPtr(_callPanelCB, uiBufPanelMoveHalfDown)
     });
-    mkCtxBind(g_mapMove, ctxCurMoveToPrevWordEnd, TermKey_CtrlJ);
-    mkCtxBind(g_mapMove, ctxCurMoveToNextWordEnd, TermKey_CtrlL);
-    // TODO: TermKey_CtrlU
-    // TODO: TermKey_CtrlO
+    mkCtxBind(g_mapMove, ctxCurMoveToPrevWordEnd, Key_CtrlJ);
+    mkCtxBind(g_mapMove, ctxCurMoveToNextWordEnd, Key_CtrlL);
+    // TODO: Key_CtrlU
+    // TODO: Key_CtrlO
 
     // TODO: [b]c
     // TODO: [B]c
@@ -393,13 +393,13 @@ static void _addMovementMap(void) {
 
 static void _addGenericMovementKeys(int32_t map) {
     // TODO: Many more useful movement keys
-    mkCtxBind(map, ctxCurMoveBack, TermKey_ArrowLeft);
-    mkCtxBind(map, ctxCurMoveFwd, TermKey_ArrowRight);
-    mkCtxBind(map, ctxCurMoveUp, TermKey_ArrowUp);
-    mkCtxBind(map, ctxCurMoveDown, TermKey_ArrowDown);
+    mkCtxBind(map, ctxCurMoveBack, Key_ArrowLeft);
+    mkCtxBind(map, ctxCurMoveFwd, Key_ArrowRight);
+    mkCtxBind(map, ctxCurMoveUp, Key_ArrowUp);
+    mkCtxBind(map, ctxCurMoveDown, Key_ArrowDown);
 
-    mkCtxBind(g_mapEdit, ctxCurMoveToLineStart, TermKey_CtrlA); // Home
-    mkCtxBind(g_mapEdit, ctxCurMoveToLineEnd, TermKey_CtrlE); // End
+    mkCtxBind(g_mapEdit, ctxCurMoveToLineStart, Key_CtrlA); // Home
+    mkCtxBind(g_mapEdit, ctxCurMoveToLineEnd, Key_CtrlE); // End
 }
 
 static void _addNormalMode(void) {
@@ -411,7 +411,7 @@ static void _addNormalMode(void) {
 
     // TODO: [y]s
     mkCtxBind(g_mapNormal, ctxRemoveLine, 'Y');
-    mkBind(g_mapNormal, BindCBKeys(_normalModeCB), TermKey_CtrlY);
+    mkBind(g_mapNormal, BindCBKeys(_normalModeCB), Key_CtrlY);
     mkCtxBind(g_mapNormal, ctxRemoveBack, 'q');
     mkCtxBind(g_mapNormal, ctxRemoveFwd, 'Q');
 
@@ -473,13 +473,13 @@ static void _addNormalMode(void) {
 
     mkBind(g_mapNormal, BindCBKeys(_normalModeCB), 'e');
     mkBind(g_mapNormal, BindCBKeys(_normalModeCB), 'E');
-    mkBind(g_mapNormal, BindCBKeys(_normalModeCB), TermKey_CtrlE);
+    mkBind(g_mapNormal, BindCBKeys(_normalModeCB), Key_CtrlE);
     mkBind(g_mapNormal, BindCBKeys(_normalModeCB), 'h');
     mkBind(g_mapNormal, BindCBKeys(_normalModeCB), 'H');
 
     // TODO: [r]s
     mkBind(g_mapNormal, BindCBKeys(_normalModeCB), 'R');
-    mkBind(g_mapNormal, BindCBKeys(_normalModeCB), TermKey_CtrlR);
+    mkBind(g_mapNormal, BindCBKeys(_normalModeCB), Key_CtrlR);
 
     mkBind(g_mapNormal, BindCBKeys(_normalModeCB), 's'); // TODO: with imm. sel
     mkBind(g_mapNormal, BindCBKeys(_normalModeCB), 'S');
@@ -492,34 +492,34 @@ static void _addEditMode(void) {
     g_mapEdit = bindAddRootMap();
     _addGenericMovementKeys(g_mapEdit);
 
-    mkCtxBind(g_mapEdit, ctxCurMoveFwd, TermKey_CtrlF);
-    mkCtxBind(g_mapEdit, ctxCurMoveBack, TermKey_CtrlB);
-    mkCtxBind(g_mapEdit, ctxCurMoveToPrevWordStart, TermKey_CtrlK);
-    mkCtxBind(g_mapEdit, ctxCurMoveToNextWordEnd, TermKey_CtrlL);
-    mkCtxBind(g_mapEdit, ctxCurMoveUp, TermKey_CtrlP);
-    mkCtxBind(g_mapEdit, ctxCurMoveDown, TermKey_CtrlN);
+    mkCtxBind(g_mapEdit, ctxCurMoveFwd, Key_CtrlF);
+    mkCtxBind(g_mapEdit, ctxCurMoveBack, Key_CtrlB);
+    mkCtxBind(g_mapEdit, ctxCurMoveToPrevWordStart, Key_CtrlK);
+    mkCtxBind(g_mapEdit, ctxCurMoveToNextWordEnd, Key_CtrlL);
+    mkCtxBind(g_mapEdit, ctxCurMoveUp, Key_CtrlP);
+    mkCtxBind(g_mapEdit, ctxCurMoveDown, Key_CtrlN);
 
-    mkCtxBind(g_mapEdit, ctxRemoveBack, TermKey_CtrlZ);
-    mkCtxBind(g_mapEdit, ctxRemoveBack, TermKey_Backspace);
-    mkCtxBind(g_mapEdit, ctxRemoveFwd, TermKey_CtrlX);
-    mkCtxBind(g_mapEdit, ctxRemoveFwd, TermKey_Delete);
-    mkBind(g_mapEdit, BindCBKeys(_editModeCB), TermKey_CtrlW);
-    mkBind(g_mapEdit, BindCBKeys(_editModeCB), TermKey_CtrlR);
-    mkBind(g_mapEdit, BindCBKeys(_editModeCB), TermKey_CtrlT);
-    mkBind(g_mapEdit, BindCBKeys(_editModeCB), TermKey_CtrlY);
+    mkCtxBind(g_mapEdit, ctxRemoveBack, Key_CtrlZ);
+    mkCtxBind(g_mapEdit, ctxRemoveBack, Key_Backspace);
+    mkCtxBind(g_mapEdit, ctxRemoveFwd, Key_CtrlX);
+    mkCtxBind(g_mapEdit, ctxRemoveFwd, Key_Delete);
+    mkBind(g_mapEdit, BindCBKeys(_editModeCB), Key_CtrlW);
+    mkBind(g_mapEdit, BindCBKeys(_editModeCB), Key_CtrlR);
+    mkBind(g_mapEdit, BindCBKeys(_editModeCB), Key_CtrlT);
+    mkBind(g_mapEdit, BindCBKeys(_editModeCB), Key_CtrlY);
 
-    mkCtxBind(g_mapEdit, ctxInsertLineAbove, TermKey_CtrlO);
-    mkCtxBind(g_mapEdit, ctxInsertLineBelow, TermKey_CtrlU);
-    mkCtxBind(g_mapEdit, ctxIndent, TermKey_CtrlD);
-    mkCtxBind(g_mapEdit, ctxDedent, TermKey_CtrlS);
+    mkCtxBind(g_mapEdit, ctxInsertLineAbove, Key_CtrlO);
+    mkCtxBind(g_mapEdit, ctxInsertLineBelow, Key_CtrlU);
+    mkCtxBind(g_mapEdit, ctxIndent, Key_CtrlD);
+    mkCtxBind(g_mapEdit, ctxDedent, Key_CtrlS);
 
     // TODO: [^H]?
     // TODO: [^V]
     mkBind(g_mapEdit, BindCBKeys(_insertTextCB), BindAny);
 
-    mkBind(g_mapEdit, BindCBNoArgs(_goToNormalModeCB), TermKey_CtrlC);
-    mkBind(g_mapEdit, BindCBNoArgs(_goToNormalModeCB), TermKey_CtrlQ);
-    mkBind(g_mapEdit, BindCBNoArgs(_goToNormalModeCB), TermKey_Escape);
+    mkBind(g_mapEdit, BindCBNoArgs(_goToNormalModeCB), Key_CtrlC);
+    mkBind(g_mapEdit, BindCBNoArgs(_goToNormalModeCB), Key_CtrlQ);
+    mkBind(g_mapEdit, BindCBNoArgs(_goToNormalModeCB), Key_Escape);
 }
 
 static void _addSelMode(void) {
@@ -540,9 +540,9 @@ static void _addSelMode(void) {
     // TODO: [s]c
     // TODO: [s][y]c
 
-    mkBind(g_mapSel, BindCBNoArgs(_goToNormalModeCB), TermKey_CtrlC);
-    mkBind(g_mapSel, BindCBNoArgs(_goToNormalModeCB), TermKey_CtrlQ);
-    mkBind(g_mapSel, BindCBNoArgs(_goToNormalModeCB), TermKey_Escape);
+    mkBind(g_mapSel, BindCBNoArgs(_goToNormalModeCB), Key_CtrlC);
+    mkBind(g_mapSel, BindCBNoArgs(_goToNormalModeCB), Key_CtrlQ);
+    mkBind(g_mapSel, BindCBNoArgs(_goToNormalModeCB), Key_Escape);
 }
 
 static void _addCmdMode(void) {
@@ -551,9 +551,9 @@ static void _addCmdMode(void) {
     Bind cancel = {
         .callback = BindCBInt(_cmdSetInputCB, UICmdInput_Canceled)
     };
-    bindAdd(g_mapCmd, BindSeq(TermKey_CtrlC), cancel);
-    bindAdd(g_mapCmd, BindSeq(TermKey_CtrlQ), cancel);
-    bindAdd(g_mapCmd, BindSeq(TermKey_Escape), cancel);
+    bindAdd(g_mapCmd, BindSeq(Key_CtrlC), cancel);
+    bindAdd(g_mapCmd, BindSeq(Key_CtrlQ), cancel);
+    bindAdd(g_mapCmd, BindSeq(Key_Escape), cancel);
 
     Bind confirm = {
         .callback = BindCBInt(_cmdSetInputCB, UICmdInput_Confirmed)
@@ -595,7 +595,7 @@ static void _normalModeCB(BindKeys keys) {
         ctxCurMoveToLineEnd(ctx);
         editorSetMode(EditorMode_Edit);
         break;
-    case TermKey_CtrlE:
+    case Key_CtrlE:
         ctxCurMoveToLineStart(ctx);
         editorSetMode(EditorMode_Edit);
         break;
@@ -622,7 +622,7 @@ static void _normalModeCB(BindKeys keys) {
             ctxRemoveBack(ctx);
         }
         break;
-    case TermKey_CtrlY:
+    case Key_CtrlY:
         ctxSelBegin(ctx, false);
         ctxCurMoveToLineEnd(ctx);
         ctxSelEnd(ctx);
@@ -638,7 +638,7 @@ static void _normalModeCB(BindKeys keys) {
         }
         editorSetMode(EditorMode_Edit);
         break;
-    case TermKey_CtrlR:
+    case Key_CtrlR:
         ctxSelBegin(ctx, false);
         ctxCurMoveToLineEnd(ctx);
         ctxSelEnd(ctx);
@@ -654,7 +654,7 @@ static void _editModeCB(BindKeys keys) {
     if (ctx == NULL) return;
 
     switch (keys[0]) {
-    case TermKey_CtrlW:
+    case Key_CtrlW:
         ctxSelBegin(ctx, false);
         ctxCurMoveToPrevWordStart(ctx);
         ctxSelEnd(ctx);
@@ -662,7 +662,7 @@ static void _editModeCB(BindKeys keys) {
             ctxRemoveBack(ctx);
         }
         break;
-    case TermKey_CtrlR:
+    case Key_CtrlR:
         ctxSelBegin(ctx, false);
         ctxCurMoveToNextWordStart(ctx);
         ctxSelEnd(ctx);
@@ -670,7 +670,7 @@ static void _editModeCB(BindKeys keys) {
             ctxRemoveBack(ctx);
         }
         break;
-    case TermKey_CtrlT:
+    case Key_CtrlT:
         ctxSelBegin(ctx, false);
         ctxCurMoveToLineStart(ctx);
         ctxSelEnd(ctx);
@@ -678,7 +678,7 @@ static void _editModeCB(BindKeys keys) {
             ctxRemoveBack(ctx);
         }
         break;
-    case TermKey_CtrlY:
+    case Key_CtrlY:
         ctxSelBegin(ctx, false);
         ctxCurMoveToLineEnd(ctx);
         ctxSelEnd(ctx);

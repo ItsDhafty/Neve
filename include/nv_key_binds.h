@@ -1,10 +1,11 @@
 #ifndef NV_KEY_BINDS_H_
 #define NV_KEY_BINDS_H_
 
-#include "nv_term.h"
+#include <stdbool.h>
+#include "nv_key_parser.h"
 
-#define BindAny (TermKey_MAX + 1)
-#define BindEnd (TermKey_MAX + 100)
+#define BindAny (Key_MAX + 1)
+#define BindEnd (Key_MAX + 100)
 
 // Create a bind sequence: appends BindEnd at the end.
 #define BindSeq(...) ((BindKeys){ __VA_ARGS__, BindEnd })

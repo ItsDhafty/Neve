@@ -82,21 +82,21 @@ int keyLogMode(void) {
     }
 
     while (true) {
-        UcdCP byte = termGetInput();
-        if (byte <= 0) {
+        UcdCP ch = termGetInput();
+        if (ch <= 0) {
             continue;
         }
-        if (byte > 127) {
-            printf("U+%04X ", byte);
-        } else if (byte == ' ') {
+        if (ch > 127) {
+            printf("U+%04X ", ch);
+        } else if (ch == ' ') {
             printf("<sp>");
-        } else if (byte > ' ' && byte <= '~') {
-            printf("%c", byte);
+        } else if (ch > ' ' && ch <= '~') {
+            printf("%c", ch);
         } else {
-            printf("^%c", byte ^ 0x40);
+            printf("^%c", ch ^ 0x40);
         }
         fflush(stdout);
-        if (byte == TermKey_CtrlC) {
+        if (ch == ('C' ^ 0x40)) { // Ctrl-C
             break;
         }
     }

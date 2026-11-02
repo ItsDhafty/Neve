@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "nv_key_binds.h"
 #include "nv_pool.h"
-#include "nv_term.h"
 
 #define _minMapCap 4
 
@@ -40,7 +39,7 @@ void _printMap(BindMap *map, uint32_t indent) {
         (void *)map->value
     );
     for (uint16_t i = 0; i < map->cap; i++) {
-        if (map->nodes[i].key != TermKey_None) {
+        if (map->nodes[i].key != Key_None) {
             _printMap(&map->nodes[i], indent + 1);
         }
     }
@@ -193,7 +192,7 @@ static uint16_t _mapIdx(BindMap *nodes, uint16_t cap, int32_t key) {
     int32_t hash = _keyHash(key);
     for (uint16_t i = 0; i < cap - 1; i++) {
         uint16_t idx = (hash + i) & (cap - 1);
-        if (nodes[idx].key == TermKey_None || nodes[idx].key == key) {
+        if (nodes[idx].key == Key_None || nodes[idx].key == key) {
             return idx;
         }
     }
@@ -206,7 +205,7 @@ static void _mapDestroy(BindMap *map) {
     }
     if (map->nodes == NULL) return;
     for (uint16_t i = 0; i < map->cap; i++) {
-        if (map->nodes[i].key != TermKey_None) {
+        if (map->nodes[i].key != Key_None) {
             _mapDestroy(&map->nodes[i]);
         }
     }
@@ -218,7 +217,7 @@ static void _mapExpand(BindMap *map) {
     BindMap *newMapNodes = memAllocZeroed(newCap, sizeof(*newMapNodes));
 
     for (uint16_t i = 0; i < map->cap; i++) {
-        if (map->nodes[i].key == TermKey_None) continue;
+        if (map->nodes[i].key == Key_None) continue;
         uint16_t newIdx = _mapIdx(newMapNodes, newCap, map->nodes[i].key);
         newMapNodes[newIdx] = map->nodes[i];
     }
@@ -233,7 +232,7 @@ static BindMap *_mapInsert(BindMap *map, BindMap entry) {
         _mapExpand(map);
     }
     uint16_t idx = _mapIdx(map->nodes, map->cap, entry.key);
-    if (map->nodes[idx].key != TermKey_None) {
+    if (map->nodes[idx].key != Key_None) {
         _mapDestroy(&map->nodes[idx]);
     } else {
         map->len++;
@@ -245,17 +244,17 @@ static BindMap *_mapInsert(BindMap *map, BindMap entry) {
 static BindMap *_mapGet(BindMap *map, int32_t key) {
     if (map->len == 0) return NULL;
     uint16_t idx = _mapIdx(map->nodes, map->cap, key);
-    return map->nodes[idx].key == TermKey_None ? NULL : &map->nodes[idx];
+    return map->nodes[idx].key == Key_None ? NULL : &map->nodes[idx];
 }
 
 static bool _mapRemove(BindMap *map, int32_t key) {
     uint16_t idx = _mapIdx(map->nodes, map->cap, key);
-    if (map->nodes[idx].key == TermKey_None) return false;
+    if (map->nodes[idx].key == Key_None) return false;
     _mapDestroy(&map->nodes[idx]);
     uint16_t mask = map->cap - 1;
     idx = (idx + 1) & mask;
     while (
-        map->nodes[idx].key != TermKey_None
+        map->nodes[idx].key != Key_None
         && (_keyHash(map->nodes[idx].key) & mask) != idx
     ) {
         uint16_t prevIdx = (idx - 1) & mask;

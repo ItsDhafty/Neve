@@ -2,7 +2,7 @@
 
 #define Q_INC_IDX(idx) (((idx) + 1) % keyQueueSize)
 
-bool keyQueueEnq(KeyQueue *queue, TermKey key) {
+bool keyQueueEnq(KeyQueue *queue, Key key) {
     if (Q_INC_IDX(queue->back) == queue->front) {
         return false;
     }
@@ -11,11 +11,11 @@ bool keyQueueEnq(KeyQueue *queue, TermKey key) {
     return true;
 }
 
-TermKey keyQueueDeq(KeyQueue *queue) {
+Key keyQueueDeq(KeyQueue *queue) {
     if (queue->front == queue->back) {
         return 0;
     }
-    TermKey key = queue->keys[queue->front];
+    Key key = queue->keys[queue->front];
     queue->front = Q_INC_IDX(queue->front);
     return key;
 }
