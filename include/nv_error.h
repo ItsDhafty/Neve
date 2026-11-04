@@ -25,5 +25,7 @@ void errLog(const char *msg);
 void errSetErrno(void);
 // Set a custom error message (it should live until the end of the program).
 void errSetMsg(const char *msg);
+// Clear the error.
+void errClear(void);
 
 #endif // !NV_ERROR_H_

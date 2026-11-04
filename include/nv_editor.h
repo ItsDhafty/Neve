@@ -3,7 +3,7 @@
 
 #include "nv_buffer.h"
 #include "nv_command.h"
-#include "nv_key_binds.h"
+#include "nv_key.h"
 #include "nv_screen.h"
 #include "nv_tui.h"
 
@@ -55,7 +55,7 @@ bool editorTryExit(void);
 void editorForceExit(void);
 
 // Handle a key press.
-void editorHandleKey(int32_t key);
+void editorHandleKey(Key key);
 // Refresh the editor screen.
 bool editorRefresh(void);
 

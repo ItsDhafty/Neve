@@ -1,14 +1,76 @@
-#ifndef NV_KEY_BINDS_H_
-#define NV_KEY_BINDS_H_
+#ifndef NV_KEY_H_
+#define NV_KEY_H_
 
 #include <stdbool.h>
-#include "nv_key_parser.h"
+#include <stdint.h>
 
-#define BindAny (Key_MAX + 1)
-#define BindEnd (Key_MAX + 100)
+/******************************* Init and Deinit ******************************/
 
-// Create a bind sequence: appends BindEnd at the end.
-#define BindSeq(...) ((BindKeys){ __VA_ARGS__, BindEnd })
+bool keyInit(void);
+void keyQuit(void);
+
+/********************************* Key events *********************************/
+
+// The top byte is used as a bitmask for key modifiers.
+
+#define KeyShift(k) (0x01000000 | (k))
+#define KeyAlt(k)   (0x02000000 | (k))
+#define KeyCtrl(k)  (0x04000000 | (k))
+#define KeySuper(k) (0x08000000 | (k))
+#define KeyHyper(k) (0x10000000 | (k))
+#define KeyMeta(k)  (0x20000000 | (k))
+#define KeyCapsL(k) (0x40000000 | (k))
+#define KeyNumL(k)  (0x80000000 | (k))
+
+// Remove the modifiers from a key
+#define KeyRaw(k)   (0xffffff & (k))
+// Check if a key has a modifier, k is the key and mod is the modifier macro.
+#define KeyHasMod(k, mod) (mod(k) ^ (k) == 0)
+
+// Special keys
+enum {
+    Key_None = 0,
+    Key_Tab = KeyCtrl('i'),
+    Key_Enter = KeyCtrl('m'),
+    Key_Escape = KeyCtrl('['),
+
+    // From here on the keys use values that cannot be in Unicode
+
+    Key_Left = 0x110000,
+    Key_Right,
+    Key_Up,
+    Key_Down,
+    Key_F1,
+    Key_F2,
+    Key_F3,
+    Key_F4,
+    Key_F5,
+    Key_F6,
+    Key_F7,
+    Key_F8,
+    Key_F9,
+    Key_F10,
+    Key_F11,
+    Key_F12,
+    Key_Home,
+    Key_End,
+    Key_Insert,
+    Key_Delete,
+    Key_Backspace,
+    Key_PageUp,
+    Key_PageDown,
+
+    BindAny
+};
+
+typedef uint32_t Key;
+
+Key keyGet(void);
+
+/********************************** Key Binds *********************************/
+
+// Create a bind sequence: appends Key_None at the end to end the sequence.
+#define BindSeq(...) ((BindKeys){ __VA_ARGS__, Key_None })
 // Create a bind callback with no arguments.
 #define BindCBNoArgs(fn)                                                       \
     ((BindCallback){                                                           \
@@ -91,17 +153,18 @@ typedef struct BindMap {
     struct BindMap *nodes;
 } BindMap;
 
-// WARNING: do not change the order of BindMatchResult
+// NOTE: the relative order of match results must not be changed as it is
+// used to simplify the code in the implementation
 
 typedef enum BindMatchResult {
     // No sequence matches this binding.
-    BindMatch_NotFound,
+    BindMatch_NotFound = 0,
     // The sequence can continue but it currently leads to no binding.
-    BindMatch_Incomplete,
+    BindMatch_Incomplete = 1,
     // The sequence unambiguously matches a binding.
-    BindMatch_Found,
+    BindMatch_Found = 2,
     // The sequence can continue but it is already a valid binding.
-    BindMatch_Partial
+    BindMatch_Partial = 3
 } BindMatchResult;
 
 // Note that if two sequences are only distinguished by a wildcard, the one
@@ -110,9 +173,6 @@ typedef enum BindMatchResult {
 // x,y triggers A
 // x,BindAny triggers B
 // The sequence x,y will find result in BindMatch_Found with A as the action.
-
-// Free all memory used by the key bindings.
-void bindQuit(void);
 
 // Add a root map for the bindings and return its ID.
 int32_t bindAddRootMap(void);
@@ -136,4 +196,4 @@ void bindPrintRoot(int32_t root);
 // Invoke the callback of a key bind.
 void bindInvokeCallback(Bind bind, BindKeys seq);
 
-#endif // !NV_KEY_BINDS_H_
+#endif // !NV_KEY_H_

@@ -42,6 +42,10 @@ bool logInit(const char *filePath) {
     return fileOpen(&logFile, sb.buf, FileMode_Write) == FileIOResult_Success;
 }
 
+bool logIsInit(void) {
+    return logFile.fp != NULL;
+}
+
 #undef DEST_ENV
 #undef SEP
 #undef ALT_SEP

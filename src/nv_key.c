@@ -1,10 +1,300 @@
 #include <stdio.h>
-#include "nv_key_binds.h"
-#include "nv_pool.h"
 
-#define _minMapCap 4
+#include "clib_threads.h"
+#include "nv_error.h"
+#include "nv_key.h"
+#include "nv_logging.h"
+#include "nv_pool.h"
+#include "nv_term.h"
+
+#define QueueNextIdx(idx) (((idx) + 1) % KeyQueueSize)
+#define KeyQueueSize 4096
+
+static Thread g_inputThread;
+static bool g_inputThreadRun = true;
 
 BindMap g_bindRoots = { 0 };
+
+typedef struct Queue {
+    uint16_t front, back;
+    Key keys[KeyQueueSize];
+} Queue;
+
+// Queue of raw terminal input to be parsed.
+static Queue g_rawQueue = { 0 };
+// Queue of parsed terminal input to be handled.
+static Queue g_parsedQueue = { 0 };
+
+static const Key recurringKeys[] = {
+    [  2] = Key_Insert,
+    [  3] = Key_Delete,
+    [  5] = Key_PageUp,
+    [  6] = Key_PageDown,
+    [  7] = Key_Home,
+    [ 11] = Key_F1,
+    [ 12] = Key_F2,
+    [ 13] = Key_F3,
+    [ 14] = Key_F4,
+    [ 15] = Key_F5,
+    [ 17] = Key_F6,
+    [ 18] = Key_F7,
+    [ 19] = Key_F8,
+    [ 20] = Key_F9,
+    [ 21] = Key_F10,
+    [ 23] = Key_F11,
+    [ 24] = Key_F12,
+    ['A'] = Key_Up,
+    ['B'] = Key_Down,
+    ['C'] = Key_Right,
+    ['D'] = Key_Left,
+    ['F'] = Key_End,
+    ['H'] = Key_Home,
+    ['P'] = Key_F1,
+    ['Q'] = Key_F2,
+    ['R'] = Key_F3,
+    ['S'] = Key_F4
+};
+
+static Key _tryParseKey(void);
+static Key _charToKey(Key k);
+static size_t _readEscapeSeq(uint32_t *outBuf, size_t bufCap);
+void _keyQEnq(Queue *queue, Key key);
+bool _keyQDeq(Queue *queue, Key *outKey);
+bool _keyQAt(const Queue *queue, size_t idx, Key *outKey);
+void _keyQDrop(Queue *queue, size_t count);
+size_t _keyQIsFull(Queue *queue);
+
+void _keyQEnq(Queue *queue, Key key) {
+    if (QueueNextIdx(queue->back) == queue->front) {
+        return;
+    }
+    queue->keys[queue->back] = key;
+    queue->back = QueueNextIdx(queue->back);
+}
+
+bool _keyQDeq(Queue *queue, Key *outKey) {
+    if (queue->front == queue->back) {
+        if (outKey) *outKey = Key_None;
+        return false;
+    }
+    if (outKey) *outKey = queue->keys[queue->front];
+    queue->front = QueueNextIdx(queue->front);
+    return true;
+}
+
+bool _keyQAt(const Queue *queue, size_t idx, Key *outKey) {
+    size_t len = queue->front <= queue->back
+        ? queue->back - queue->front
+        : (queue->back + KeyQueueSize) - queue->front;
+
+    if (idx >= len) {
+        if (outKey) {
+            *outKey = Key_None;
+        }
+        return false;
+    } else {
+        if (outKey) {
+            *outKey = queue->keys[(queue->front + idx) % KeyQueueSize];
+        }
+        return true;
+    }
+}
+
+void _keyQDrop(Queue *queue, size_t count) {
+    if (count == 0) return;
+    size_t len = queue->front <= queue->back
+        ? queue->back - queue->front
+        : (queue->back + KeyQueueSize) - queue->front;
+    if (count > len) count = len;
+
+    queue->front = (queue->front + count) % KeyQueueSize;
+}
+
+ThreadRet _inputThreadRoutine(void *arg) {
+    (void)arg;
+    while (g_inputThreadRun) {
+        UcdCP rawInput = termGetInput();
+        if (rawInput < 0) {
+            errLog("reading input failed");
+            errClear();
+        }
+        _keyQEnq(&g_rawQueue, rawInput);
+        Key key = _tryParseKey();
+        if (key == Key_None) {
+            continue;
+        }
+        _keyQEnq(&g_parsedQueue, key);
+    }
+    return 0;
+}
+
+Key keyGet(void) {
+    Key k;
+    (void)_keyQDeq(&g_parsedQueue, &k);
+    return k;
+}
+
+static Key _tryParseKey(void) {
+    Key k;
+    if (!_keyQAt(&g_rawQueue, 0, &k)) return Key_None;
+
+    if (k != Key_Escape) {
+        _keyQDeq(&g_rawQueue, NULL);
+        return _charToKey(k);
+    }
+
+#define EscapeBufSize 6 // Allow at most up to 4 arguments for the escape seq.
+    uint32_t buf[EscapeBufSize];
+    size_t len = _readEscapeSeq(buf, EscapeBufSize);
+#undef EscapeBufSize
+
+    if (len == 1) {
+        return _charToKey(buf[0]);
+    }
+
+    uint32_t endCh = buf[len - 1];
+    size_t argCount = len - 2;
+    Key ret = 0;
+
+    if (
+        (endCh <= 'S' && recurringKeys[endCh] != Key_None)
+        || (
+            endCh == '~'
+            && buf[0] == '['
+            && (argCount == 1 || argCount == 2)
+            && buf[1] <= 24
+            && recurringKeys[buf[1]] != Key_None
+        )
+    ) {
+        if (endCh == '~') {
+            ret = recurringKeys[buf[1]];
+            if (argCount == 1) return ret;
+        } else {
+            ret = recurringKeys[endCh];
+        }
+
+        if (argCount == 0) {
+            return ret;
+        } else if (argCount == 1) {
+            return ret | ((buf[1] - 1) << 24);
+        } else {
+            return ret | ((buf[2] - 1) << 24);
+        }
+    }
+
+    logFmt(Log_Warning, "unrecognized input escape sequence");
+    return Key_None;
+}
+
+static Key _charToKey(Key k) {
+    if ((k >= ' ' && k <= '~') || k > 0x7f) {
+        return k;
+    }
+
+    if (k == 0x7f) {
+        return Key_Backspace; // The actual Delete key is usually ^[[3~
+    } else if (k == 0x8) {
+        return KeyCtrl(Key_Backspace);
+    } else if (k == 0 || k > 26) {
+        return KeyCtrl('@' + k);
+    } else if (k >= 1 && k <= 26) {
+        return KeyCtrl('a' + k - 1);
+    }
+
+    nvUnreachable;
+}
+
+// Parse escape sequences as the regular expression
+// \033[O[](\d+(;\d+)*)?.
+// In the buffer the first and last occupied slots are the characters
+// themselves and the numbers in the middle are parsed as actual numbers.
+static size_t _readEscapeSeq(uint32_t *outBuf, size_t bufSize) {
+    nvAssertExpr(bufSize >= 3);
+    Key key;
+    (void)_keyQAt(&g_rawQueue, 0, &key);
+    nvAssertExpr(key == Key_Escape);
+
+    if (!_keyQAt(&g_rawQueue, 1, &key)) {
+        goto notAnEscape;
+    }
+    if (key != '[' && key != 'O') {
+        // Alt+Key usually sends ESC Key
+        _keyQDrop(&g_rawQueue, 2);
+        outBuf[0] = KeyAlt(_charToKey(key));
+        return 1;
+    }
+
+    // The initial ESC is omitted in the buffer.
+    outBuf[0] = key;
+
+    size_t numIdx = 0;
+    size_t outBufIdx = 1;
+    size_t queueIdx = 2;
+    char numBuf[6] = { 0 };
+    for (; _keyQAt(&g_rawQueue, queueIdx, &key); queueIdx++) {
+        // Ignore escape sequences that become too long.
+        if (queueIdx + 1 >= KeyQueueSize || queueIdx > 2 + (bufSize - 2) * 6) {
+            goto notAnEscape;
+        }
+
+        if (key == Key_None) {
+            goto notAnEscape;
+        }
+
+        // Add digits to numBuf to be parsed later
+        if (key >= '0' && key <= '9') {
+            if (numIdx < sizeof(numBuf) - 1) {
+                numBuf[numIdx++] = (char)key;
+            } else {
+                goto notAnEscape;
+            }
+            continue;
+        }
+
+        // Escape sequences must end with a printable character
+        if (key < ' ' || key > '~') {
+            goto notAnEscape;
+        }
+
+        // When the digits end parse the number
+        numBuf[numIdx] = '\0';
+        unsigned long num = strtoul(numBuf, NULL, 10);
+        memset(numBuf, 0, sizeof(numBuf));
+
+        if (num == 0) {
+            num = 1;
+        } else if (num > INT16_MAX) {
+            goto notAnEscape;
+        }
+
+        if (outBufIdx < bufSize) {
+            outBuf[outBufIdx++] = num;
+        } else {
+            goto notAnEscape;
+        }
+
+        // Expect more arguments if there is a semicolon
+        if (key != ';') {
+            break;
+        }
+
+    }
+
+    if (outBufIdx < bufSize) {
+        outBuf[outBufIdx++] = key;
+        _keyQDrop(&g_rawQueue, queueIdx);
+        return outBufIdx;
+    }
+
+notAnEscape:
+    (void)_keyQDeq(&g_rawQueue, &key);
+    outBuf[0] = _charToKey(key);
+    return 1;
+}
+
+/******************************************************************************/
+
+#define _minMapCap 4
 
 Pool g_bindPool = {
     .blockSize = sizeof(Bind),
@@ -57,7 +347,7 @@ void bindPrintRoot(int32_t root) {
 void bindAdd(int32_t root, BindKeys seq, Bind keyBind) {
     BindMap *map = _mapGet(&g_bindRoots, root);
     if (map == NULL) return;
-    while (*seq != BindEnd) {
+    while (*seq != Key_None) {
         BindMap *newMap = _mapGet(map, *seq);
         if (newMap == NULL) {
             newMap = _mapInsert(map, (BindMap){ .key = *seq });
@@ -78,15 +368,9 @@ bool bindRemove(int32_t root, BindKeys seq) {
     BindMap *map = _mapGet(&g_bindRoots, root);
     if (map == NULL) return false;
 
-    // When deleting a key binding, if it is a leaf node of the tree, the leaf
-    // must also be deleted. However this could lead to another leaf that has
-    // no binding breaking the invariant of the data structure. To do this we
-    // store the last valid node along the sequence along the part of the
-    // sequence after it.
-
     BindMap *lastValidNode = map;
     int32_t branch = *seq;
-    while (*seq != BindEnd) {
+    while (*seq != Key_None) {
         map = _mapGet(map, *seq);
         seq++;
 
@@ -111,7 +395,7 @@ bool bindRemove(int32_t root, BindKeys seq) {
 bool bindExists(int32_t root, BindKeys seq) {
     BindMap *map = _mapGet(&g_bindRoots, root);
     if (map == NULL) return false;
-    while (*seq != BindEnd && map != NULL) {
+    while (*seq != Key_None && map != NULL) {
         map = _mapGet(map, *seq);
         seq++;
     }
@@ -129,7 +413,7 @@ static BindMatchResult _bindMatchRec(
     int32_t *seq,
     Bind *outBind
 ) {
-    if (seq[0] == BindEnd) {
+    if (seq[0] == Key_None) {
         if (map->value == NULL) {
             return map->len == 0 ? BindMatch_NotFound : BindMatch_Incomplete;
         } else {
@@ -265,12 +549,6 @@ static bool _mapRemove(BindMap *map, int32_t key) {
     return true;
 }
 
-void bindQuit(void) {
-    _mapDestroy(&g_bindRoots);
-    g_bindRoots = (BindMap){ 0 };
-    poolDestroy(&g_bindPool);
-}
-
 void bindInvokeCallback(Bind bind, BindKeys seq) {
     switch (bind.callback.kind) {
     case BindCallback_NoArgs:
@@ -289,4 +567,23 @@ void bindInvokeCallback(Bind bind, BindKeys seq) {
         bind.callback.func.ptrKeys.func(bind.callback.func.ptrKeys.arg, seq);
         break;
     }
+}
+
+/******************************************************************************/
+
+bool keyInit(void) {
+    if (!threadCreate(&g_inputThread, _inputThreadRoutine, NULL)) {
+        errSetErrno();
+        return false;
+    }
+    return true;
+}
+
+void keyQuit(void) {
+    _mapDestroy(&g_bindRoots);
+    g_bindRoots = (BindMap){ 0 };
+    poolDestroy(&g_bindPool);
+
+    g_inputThreadRun = false;
+    (void)threadJoin(g_inputThread, NULL);
 }

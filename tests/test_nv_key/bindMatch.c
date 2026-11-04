@@ -1,5 +1,5 @@
 #include "nv_test.h"
-#include "nv_key_binds.h"
+#include "nv_key.h"
 
 typedef BindMatchResult BMR;
 
@@ -20,7 +20,7 @@ void test_bindMatchNotFound(void) {
     result = bindMatch(root, BindSeq('x', 'y', 'z'), &bind);
     testAssert(result == BindMatch_NotFound);
 
-    bindQuit();
+    keyQuit();
 }
 
 void test_bindMatchIncomplete(void) {
@@ -36,7 +36,7 @@ void test_bindMatchIncomplete(void) {
     result = bindMatch(root, BindSeq('a', 'b'), &bind);
     testAssert(result == BindMatch_Incomplete);
 
-    bindQuit();
+    keyQuit();
 }
 
 void test_bindMatchFound(void) {
@@ -64,7 +64,7 @@ void test_bindMatchFound(void) {
     testAssert(result == BindMatch_Found);
     testAssert(bind.callback.kind == BindCallback_Int);
 
-    bindQuit();
+    keyQuit();
 }
 
 void test_bindMatchPartial(void) {
@@ -86,7 +86,7 @@ void test_bindMatchPartial(void) {
     result = bindMatch(root, BindSeq('i', 'j', 'k'), &bind);
     testAssert(result == BindMatch_Partial);
 
-    bindQuit();
+    keyQuit();
 }
 
 testList(

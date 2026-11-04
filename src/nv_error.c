@@ -10,8 +10,9 @@
 #include "nv_string.h"
 #endif // !_WIN32
 
-#include "nv_error.h"
 #include "clib_threads.h"
+#include "nv_error.h"
+#include "nv_logging.h"
 #include "nv_utils.h"
 
 static ThreadLocal Err g_err = { 0 };
@@ -22,9 +23,17 @@ Err *errGet(void) {
 
 static void _printErrMsg(const char *msg, char *desc) {
     if (msg == NULL || *msg == '\0') {
-        (void)fprintf(stderr, "%s\r\n", desc);
+        if (logIsInit()) {
+            logFmt(Log_Error, "%s\n", desc);
+        } else {
+            (void)fprintf(stderr, "%s\r\n", desc);
+        }
     } else {
-        (void)fprintf(stderr, "%s: %s\r\n", msg, desc);
+        if (logIsInit()) {
+            logFmt(Log_Error, "%s: %s\n", msg, desc);
+        } else {
+            (void)fprintf(stderr, "%s: %s\r\n", msg, desc);
+        }
     }
 }
 
@@ -88,4 +97,8 @@ void errSetErrno(void) {
 void errSetMsg(const char *msg) {
     g_err.type = ErrType_CustomMsg;
     g_err.data.customMsg = msg;
+}
+
+void errClear(void) {
+    g_err.type = ErrType_None;
 }

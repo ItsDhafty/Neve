@@ -96,6 +96,7 @@ void fileClose(File *file) {
 
     (void)fclose(file->fp);
     strDestroy(&file->path);
+    *file = (File){ 0 };
 }
 
 FileIOResult fileRead(

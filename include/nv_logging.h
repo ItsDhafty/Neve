@@ -11,6 +11,7 @@ typedef enum LogLevel {
 } LogLevel;
 
 bool logInit(const char *filePath);
+bool logIsInit(void);
 void logQuit(void);
 
 nvUnixFmt(2, 3) void logFmt(LogLevel lvl, nvWinFmt const char *fmt, ...);

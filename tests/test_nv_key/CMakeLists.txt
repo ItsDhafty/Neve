@@ -1,0 +1,11 @@
+add_tests_in_directory(nv_key
+    nv_error.c
+    nv_file.c
+    nv_key.c
+    nv_logging.c
+    nv_pool.c
+    nv_string.c
+    nv_term.c
+    unicode/nv_ucd.c
+    unicode/nv_utf.c
+)

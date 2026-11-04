@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdint.h>
-#include "nv_key_parser.h"
 #include "unicode/nv_utf.h"
 
 /******************** Initialization and deinitialization *********************/
@@ -24,8 +23,6 @@ bool termIsInit(void);
 
 // Get raw input characters, returns a negative value on error.
 UcdCP termGetInput(void);
-// Get key press, returns a negative value on error.
-Key termGetKey(void);
 // Read from the terminal.
 int64_t termRead(Utf8Ch *buf, size_t bufSize);
 

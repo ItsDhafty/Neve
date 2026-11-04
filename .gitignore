@@ -6,8 +6,8 @@
 build/
 build_*/
 
-ignore__*/
-ignore__*
+_*/
+_*
 
 __pycache__/
 ucd-*/
