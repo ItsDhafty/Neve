@@ -1,5 +1,5 @@
 #include "nv_test.h"
-#include "nv_key.h"
+#include "nv_binds.h"
 
 static Bind emptyBind = { 0 };
 
@@ -11,7 +11,8 @@ void test_bindAddToRoot(void) {
     testAssert(bindExists(root, BindSeq('a')));
     testAssert(bindExists(root, BindSeq('b')));
     testAssert(bindExists(root, BindSeq(BindAny)));
-    keyQuit();
+
+    bindQuit();
 }
 
 void test_bindAddExtending(void) {
@@ -24,7 +25,7 @@ void test_bindAddExtending(void) {
     testAssert(bindExists(root, BindSeq('a', 'b')));
     testAssert(bindExists(root, BindSeq('a', 'b', 'c')));
     testAssert(bindExists(root, BindSeq('a', 'c')));
-    keyQuit();
+    bindQuit();
 }
 
 testList(

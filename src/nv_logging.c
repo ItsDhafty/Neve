@@ -1,9 +1,16 @@
 #include <stdarg.h>
 #include <stdlib.h>
+#include "clib_threads.h"
 #include "nv_logging.h"
 #include "nv_file.h"
 
-static File logFile = { 0 };
+#ifdef NV_DEBUG
+static LogLevel g_minLevel = Log_Debug;
+#else
+static LogLevel g_minLevel = Log_Warning;
+#endif
+static File g_logFile = { 0 };
+static ThreadMutex g_logMutex = ThreadMutexInitializer;
 
 #ifdef _WIN32
 
@@ -23,7 +30,7 @@ static File logFile = { 0 };
 
 bool logInit(const char *filePath) {
     if (filePath != NULL) {
-        return fileOpen(&logFile, filePath, FileMode_Write)
+        return fileOpen(&g_logFile, filePath, FileMode_Write)
             == FileIOResult_Success;
     }
 
@@ -39,11 +46,11 @@ bool logInit(const char *filePath) {
         strBufAppendC(&sb, sepStr);
     }
     strBufAppendC(&sb, FILE_NAME);
-    return fileOpen(&logFile, sb.buf, FileMode_Write) == FileIOResult_Success;
+    return fileOpen(&g_logFile, sb.buf, FileMode_Write) == FileIOResult_Success;
 }
 
 bool logIsInit(void) {
-    return logFile.fp != NULL;
+    return g_logFile.fp != NULL;
 }
 
 #undef DEST_ENV
@@ -52,25 +59,31 @@ bool logIsInit(void) {
 #undef FILE_NAME
 
 void logQuit(void) {
-    fileClose(&logFile);
+    fileClose(&g_logFile);
 }
 
 nvUnixFmt(2, 3) void logFmt(LogLevel lvl, nvWinFmt const char *fmt, ...) {
+    if (lvl < g_minLevel) return;
     switch (lvl) {
+    case Log_Debug:
+        fputs("[DEBUG]   ", g_logFile.fp);
+        break;
     case Log_Info:
-        fputs("[INFO]    ", logFile.fp);
+        fputs("[INFO]    ", g_logFile.fp);
         break;
     case Log_Warning:
-        fputs("[WARNING] ", logFile.fp);
+        fputs("[WARNING] ", g_logFile.fp);
         break;
     case Log_Error:
-        fputs("[ERROR]   ", logFile.fp);
+        fputs("[ERROR]   ", g_logFile.fp);
         break;
     }
     va_list args;
+    threadMutexLock(&g_logMutex);
     va_start(args, fmt);
-    (void)vfprintf(logFile.fp, fmt, args);
+    (void)vfprintf(g_logFile.fp, fmt, args);
     va_end(args);
-    putc('\n', logFile.fp);
-    fflush(logFile.fp);
+    putc('\n', g_logFile.fp);
+    fflush(g_logFile.fp);
+    threadMutexUnlock(&g_logMutex);
 }

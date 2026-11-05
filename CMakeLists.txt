@@ -54,7 +54,7 @@ add_executable(neve ${NeveSources})
 if(MSVC)
     target_compile_options(neve PRIVATE /W4)
 else()
-    target_compile_options(neve PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(neve PRIVATE -Wall -Wextra)
 endif()
 
 if(NOT WIN32)

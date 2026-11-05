@@ -5,6 +5,7 @@
 #include "nv_utils.h"
 
 typedef enum LogLevel {
+    Log_Debug,
     Log_Info,
     Log_Warning,
     Log_Error

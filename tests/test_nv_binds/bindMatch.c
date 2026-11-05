@@ -1,11 +1,10 @@
 #include "nv_test.h"
-#include "nv_key.h"
+#include "nv_binds.h"
 
 typedef BindMatchResult BMR;
 
 void test_bindMatchNotFound(void) {
     int32_t root = bindAddRootMap();
-
     Bind bind = { 0 };
     bindAdd(root, BindSeq('x'), bind);
     bindAdd(root, BindSeq('x', 'y'), bind);
@@ -20,7 +19,7 @@ void test_bindMatchNotFound(void) {
     result = bindMatch(root, BindSeq('x', 'y', 'z'), &bind);
     testAssert(result == BindMatch_NotFound);
 
-    keyQuit();
+    bindQuit();
 }
 
 void test_bindMatchIncomplete(void) {
@@ -36,7 +35,7 @@ void test_bindMatchIncomplete(void) {
     result = bindMatch(root, BindSeq('a', 'b'), &bind);
     testAssert(result == BindMatch_Incomplete);
 
-    keyQuit();
+    bindQuit();
 }
 
 void test_bindMatchFound(void) {
@@ -64,7 +63,7 @@ void test_bindMatchFound(void) {
     testAssert(result == BindMatch_Found);
     testAssert(bind.callback.kind == BindCallback_Int);
 
-    keyQuit();
+    bindQuit();
 }
 
 void test_bindMatchPartial(void) {
@@ -86,12 +85,12 @@ void test_bindMatchPartial(void) {
     result = bindMatch(root, BindSeq('i', 'j', 'k'), &bind);
     testAssert(result == BindMatch_Partial);
 
-    keyQuit();
+    bindQuit();
 }
 
 testList(
-    // testMake(test_bindMatchNotFound),
-    // testMake(test_bindMatchIncomplete),
+    testMake(test_bindMatchNotFound),
+    testMake(test_bindMatchIncomplete),
     testMake(test_bindMatchFound),
-    // testMake(test_bindMatchPartial),
+    testMake(test_bindMatchPartial),
 )

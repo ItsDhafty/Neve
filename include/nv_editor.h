@@ -4,6 +4,7 @@
 #include "nv_buffer.h"
 #include "nv_command.h"
 #include "nv_key.h"
+#include "nv_binds.h"
 #include "nv_screen.h"
 #include "nv_tui.h"
 

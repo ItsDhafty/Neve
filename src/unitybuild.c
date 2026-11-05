@@ -1,6 +1,7 @@
 #include "clib_mem.c"
 #include "clib_threads.c"
 #include "nv_buffer.c"
+#include "nv_binds.c"
 #include "nv_command.c"
 #include "nv_context.c"
 #include "nv_draw.c"

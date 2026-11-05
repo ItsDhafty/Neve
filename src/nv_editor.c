@@ -1,17 +1,11 @@
 #include <assert.h>
 #include <stdarg.h>
 
-#include "nv_buffer.h"
-#include "nv_context.h"
 #include "nv_draw.h"
 #include "nv_editor.h"
 #include "nv_escapes.h"
-#include "nv_key.h"
-#include "nv_screen.h"
 #include "nv_term.h"
 #include "nv_time.h"
-#include "nv_tui.h"
-#include "nv_utils.h"
 
 Editor g_ed = { 0 };
 int32_t g_mapMove;
@@ -61,6 +55,7 @@ void editorInit(void) {
 void editorQuit(void) {
     screenDestroy(&g_ed.screen);
     bufMapDestroy(&g_ed.buffers);
+    bindQuit();
 }
 
 bool editorUpdateSize(void) {

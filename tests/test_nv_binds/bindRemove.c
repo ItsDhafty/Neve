@@ -1,5 +1,5 @@
 #include "nv_test.h"
-#include "nv_key.h"
+#include "nv_binds.h"
 
 void test_bindRemove(void) {
     int32_t root = bindAddRootMap();
@@ -8,7 +8,7 @@ void test_bindRemove(void) {
     testAssert(bindExists(root, BindSeq('a')));
     bindRemove(root, BindSeq('a'));
     testAssert(!bindExists(root, BindSeq('a')));
-    keyQuit();
+    bindQuit();
 }
 
 testList(
