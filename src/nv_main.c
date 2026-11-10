@@ -21,12 +21,14 @@ bool initNeve(void) {
         return false;
     }
 
+    editorInit();
+
     if (!keyInit()) {
+        editorQuit();
         errLog("failed to initialize input handling");
         return false;
     }
 
-    editorInit();
     g_neveIsInit = true;
 
     return true;
@@ -37,8 +39,8 @@ void quitNeve(void) {
         return;
     }
 
-    editorQuit();
     keyQuit();
+    editorQuit();
     termQuit();
 }
 

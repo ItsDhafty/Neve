@@ -196,9 +196,13 @@ static Key _tryParseKey(void) {
         // Assume that events and alternate keys are not reported.
         switch (argCount) {
         case 0: return Key_None;
-        case 1: return buf[1];
-        case 2: return buf[1] | (buf[2] << 24);
-        case 3: return buf[3]; // If there is text just report it.
+        case 1: return _charToKey(buf[1]);
+        case 2: return buf[1] | ((buf[2] - 1) << 24);
+        case 3:
+            if (buf[2] != 0 && ((buf[2] - 1) << 24) == KeyCtrl(0))
+                return buf[1] | ((buf[2] - 1) << 24);
+            else
+                return buf[3];
         default: break;
         }
     }
