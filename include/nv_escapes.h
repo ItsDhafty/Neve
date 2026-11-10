@@ -23,6 +23,13 @@
 #define escDisableAltBuffer "\x1b[?1049l"
 #endif
 
+// Get supported flags for kitty keyboard protocol
+#define escKeyGetFlags "\x1b[?u"
+// Push flags to enable kitty keyboard protocol
+#define escKeyPushFlags(f) "\x1b[>" f "u"
+// Pop flags for kitty keyobard protocol
+#define escKeyPopFlags "\x1b[<u"
+
 /***************************** Cursor positioning *****************************/
 
 // Move cursor up

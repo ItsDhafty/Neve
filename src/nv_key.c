@@ -1,23 +1,36 @@
 #include <stdio.h>
 
 #include "clib_threads.h"
+#include "nv_escapes.h"
 #include "nv_error.h"
 #include "nv_key.h"
 #include "nv_logging.h"
 #include "nv_pool.h"
 #include "nv_term.h"
+#include "nv_time.h"
 
 #define QueueNextIdx(idx) (((idx) + 1) % KeyQueueSize)
 #define KeyQueueSize 4096
 
 static Thread g_inputThread;
-static bool g_inputThreadRun = true;
-
+static volatile bool g_inputThreadRun = true;
+static volatile bool g_requestPause = false; // Set outside the thread
+static volatile bool g_eventsPaused = false; // Set inside the thread
+static bool g_pushedKittyFlags = false;
 
 typedef struct Queue {
     uint16_t front, back;
     Key keys[KeyQueueSize];
 } Queue;
+
+enum KittyFlags {
+    KF_Disambiguate  = 0x01, // Disambiguate escape codes
+    KF_Events        = 0x02, // Report event types
+    KF_AlternateKeys = 0x04, // Report alternate keys
+    KF_AllAsEscapes  = 0x08, // Report all keys as escape codes
+    KF_Text          = 0x10, // Report associated text
+};
+uint32_t _getKittyFlags(void);
 
 // Queue of raw terminal input to be parsed.
 static Queue g_rawQueue = { 0 };
@@ -110,6 +123,13 @@ void _keyQDrop(Queue *queue, size_t count) {
 ThreadRet _inputThreadRoutine(void *arg) {
     (void)arg;
     while (g_inputThreadRun) {
+        if (g_requestPause) {
+            g_eventsPaused = true;
+            timeSleep(TimeMilliSec);
+            continue;
+        }
+        g_eventsPaused = false;
+
         UcdCP rawInput = termGetInput();
         if (rawInput < 0) {
             errLog("reading input failed");
@@ -133,7 +153,7 @@ static Key _tryParseKey(void) {
         return _charToKey(k);
     }
 
-#define EscapeBufSize 6 // Allow at most up to 4 arguments for the escape seq.
+#define EscapeBufSize 16
     uint32_t buf[EscapeBufSize];
     size_t len = _readEscapeSeq(buf, EscapeBufSize);
 #undef EscapeBufSize
@@ -171,6 +191,15 @@ static Key _tryParseKey(void) {
             return ret | ((buf[1] - 1) << 24);
         } else {
             return ret | ((buf[2] - 1) << 24);
+        }
+    } else if (endCh == 'u' && buf[0] == '[') {
+        // Assume that events and alternate keys are not reported.
+        switch (argCount) {
+        case 0: return Key_None;
+        case 1: return buf[1];
+        case 2: return buf[1] | (buf[2] << 24);
+        case 3: return buf[3]; // If there is text just report it.
+        default: break;
         }
     }
 
@@ -265,13 +294,6 @@ static size_t _readEscapeSeq(uint32_t *outBuf, size_t bufSize) {
             memset(numBuf, 0, sizeof(numBuf));
             numIdx = 0;
 
-            if (num == 0) {
-                num = 1;
-            } else if (num > INT16_MAX) {
-                logFmt(Log_Debug, "num too big");
-                goto notAnEscape;
-            }
-
             if (outBufIdx < bufSize) {
                 outBuf[outBufIdx++] = num;
             } else {
@@ -280,7 +302,7 @@ static size_t _readEscapeSeq(uint32_t *outBuf, size_t bufSize) {
             }
         }
 
-        // Expect more arguments if there is a semicolon
+        // Expect more arguments if there is a semicolon or a colon
         if (key != ';') {
             break;
         }
@@ -299,7 +321,43 @@ notAnEscape:
     return 1;
 }
 
+void keyPauseEvents(void) {
+    g_requestPause = true;
+    while (!g_eventsPaused) {}
+}
+
+void keyResumeEvents(void) {
+    g_requestPause = false;
+    while (g_eventsPaused) {}
+}
+
 bool keyInit(void) {
+    // Set the kitty keyboard protocol with the following flags:
+    // - 8: report all keys as escape codes
+    // - 16: report associated text
+
+    g_pushedKittyFlags = true;
+    termWrite(sLen(escKeyPushFlags("24")));
+    uint32_t flags = _getKittyFlags();
+    if (flags == 0) {
+        g_pushedKittyFlags = false;
+        goto startThread;
+    }
+
+    flags ^= flags & KF_Disambiguate; // Ignore KF_Disambiguate
+
+    if (flags == (KF_AllAsEscapes | KF_Text)) {
+        goto startThread;
+    }
+    termWrite(sLen(escKeyPopFlags));
+    termWrite(sLen(escKeyPushFlags("1")));
+    flags = _getKittyFlags();
+    if (flags != KF_Disambiguate) {
+        g_pushedKittyFlags = false;
+        termWrite(sLen(escKeyPopFlags));
+    }
+
+startThread:
     if (!threadCreate(&g_inputThread, _inputThreadRoutine, NULL)) {
         errSetErrno();
         return false;
@@ -310,4 +368,33 @@ bool keyInit(void) {
 void keyQuit(void) {
     g_inputThreadRun = false;
     (void)threadJoin(g_inputThread, NULL);
+    if (g_pushedKittyFlags) {
+        termWrite(sLen(escKeyPopFlags));
+    }
+}
+
+uint32_t _getKittyFlags(void) {
+    char buf[7] = { 0 };
+    if (!termWrite(sLen(escKeyGetFlags))) {
+        return 0;
+    }
+
+    UcdCP ch = termGetInput();
+    if (ch != '\x1b') return 0;
+    ch = termGetInput();
+    if (ch != '[') return 0;
+    ch = termGetInput();
+    if (ch != '?') return 0;
+
+    ch = termGetInput();
+    for (size_t i = 0; i < nvArrlen(buf); i++) {
+        if (ch < '0' || ch > '9') {
+            break;
+        }
+        buf[i] = (char)ch;
+        ch = termGetInput();
+    }
+
+    if (ch != 'u') return 0;
+    return (uint32_t)strtol(buf, NULL, 10);
 }

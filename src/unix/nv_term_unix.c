@@ -5,6 +5,7 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include "nv_error.h"
 #include "nv_escapes.h"

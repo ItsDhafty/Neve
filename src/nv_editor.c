@@ -56,6 +56,12 @@ void editorQuit(void) {
     screenDestroy(&g_ed.screen);
     bufMapDestroy(&g_ed.buffers);
     bindQuit();
+    termWrite(sLen(
+        escScreenClear
+        escDisableAltBuffer
+        escCursorShow
+        escCursorShapeDefault
+    ));
 }
 
 bool editorUpdateSize(void) {

@@ -4,7 +4,6 @@
 
 #include "nv_editor.h"
 #include "nv_error.h"
-#include "nv_escapes.h"
 #include "nv_key.h"
 #include "nv_logging.h"
 #include "nv_term.h"
@@ -17,18 +16,19 @@ bool initNeve(void) {
         return false;
     }
 
-    if (!keyInit()) {
-        errLog("failed to initialize input handling");
-        return false;
-    }
-
     if (!termEnableRawMode(1)) {
         errLog("failed to enable raw mode");
         return false;
     }
 
+    if (!keyInit()) {
+        errLog("failed to initialize input handling");
+        return false;
+    }
+
     editorInit();
     g_neveIsInit = true;
+
     return true;
 }
 
@@ -37,15 +37,8 @@ void quitNeve(void) {
         return;
     }
 
-    termWrite(sLen(
-        escScreenClear
-        escDisableAltBuffer
-        escCursorShow
-        escCursorShapeDefault
-    ));
-
-    keyQuit();
     editorQuit();
+    keyQuit();
     termQuit();
 }
 

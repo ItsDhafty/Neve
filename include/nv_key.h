@@ -56,10 +56,21 @@ enum {
     BindAny
 };
 
+
+
 typedef uint32_t Key;
 
 bool keyInit(void);
 void keyQuit(void);
+// Get a key event.
 Key keyGet(void);
+
+// Stop reading terminal input.
+void keyPauseEvents(void);
+// Restart reading terminal input.
+void keyResumeEvents(void);
+
+// Get a bitmask of the active flags for the Kitty keyboard protocol.
+uint32_t keyGetKittyFlags(void);
 
 #endif // !NV_KEY_H_

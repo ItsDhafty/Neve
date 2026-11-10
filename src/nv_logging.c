@@ -23,7 +23,7 @@ static ThreadMutex g_logMutex = ThreadMutexInitializer;
 
 #define DEST_ENV "HOME"
 #define SEP '/'
-#define ALT_SEP '\0' // POSIX only supports /
+#define ALT_SEP '\0'
 #define FILE_NAME ".neve.log"
 
 #endif
@@ -36,10 +36,14 @@ bool logInit(const char *filePath) {
 
     char buf[1024];
     StrBuf sb = strBufMake(buf, nvArrlen(buf));
+#ifdef NV_DEBUG
+    const char *dest = ".";
+#else
     const char *dest = getenv(DEST_ENV);
     if (dest == NULL) {
         return false;
     }
+#endif
     const char sepStr[] = { SEP, '\0' };
     strBufAppendC(&sb, dest);
     if (sb.buf[sb.len - 1] != SEP && sb.buf[sb.len - 1] != ALT_SEP) {

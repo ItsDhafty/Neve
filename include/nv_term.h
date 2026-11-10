@@ -26,6 +26,7 @@ UcdCP termGetInput(void);
 // Read from the terminal.
 int64_t termRead(Utf8Ch *buf, size_t bufSize);
 
+
 /*********************************** Output ***********************************/
 
 // Write to the terminal.
