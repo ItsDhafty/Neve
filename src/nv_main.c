@@ -119,5 +119,9 @@ int main(int argc, char **argv) {
 exit:
     quitNeve();
     logQuit();
+
+    if (memHasAllocs()) {
+        memPrintAllocs();
+    }
     return ret;
 }

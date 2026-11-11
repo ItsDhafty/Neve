@@ -69,12 +69,14 @@ typedef struct UI {
 } UI;
 
 void uiInit(UI *ui);
+void uiDestroy(UI *ui);
 void uiResize(UI *ui, uint16_t w, uint16_t h);
 
 void uiUpdate(UIElement *elem);
 
 void uiBufPanelInit(UIBufPanel *panel);
 void uiCmdInputInit(UICmdInput *cmdInput);
+void uiCmdInputDestroy(UICmdInput *cmdInput);
 
 void uiBufPanelMoveHalfUp(UIBufPanel *panel);
 void uiBufPanelMoveHalfDown(UIBufPanel *panel);

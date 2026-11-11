@@ -106,6 +106,7 @@ void ctxDestroy(Ctx *ctx) {
     arrClear(&ctx->_refs);
     arrClear(&ctx->sels);
     arrClear(&ctx->cursors);
+    arrClear(&ctx->_curSwap);
 
     memFree(ctx->_buf.bytes);
 

@@ -9,8 +9,6 @@ static const char *_editModeStr = "Edit";
 static const char *_selectionModeStr = "Selection";
 static const char *_commandModeStr = "Command";
 
-static Str lineBuf = { 0 };
-
 static const size_t _cSymbolLen = 3;
 static const Utf8Ch _cSymbols[][3] = {
     [0x00] = { 0xe2, 0x90, 0x80 },
@@ -339,7 +337,7 @@ static void _drawBufPanel(Screen *screen, const UIBufPanel *panel) {
             screen,
             ctx,
             line,
-            &lineBuf,
+            &screen->tempBuf,
             x + numColWidth, y,
             panel->elem.w - numColWidth, panel->scrollX
         );
@@ -424,11 +422,9 @@ static void _drawStatusBar(Screen *screen, const UIElement *statusBar) {
         nvUnreachable;
     }
 
-    
-
     screenWriteFmt(
         screen,
-        statusBar->x, 
+        statusBar->x,
         statusBar->y,
         "[%s]", modeStr
     );
@@ -454,7 +450,7 @@ static void _drawCmdInput(Screen *screen, const UICmdInput *cmdInput) {
         screen,
         &cmdInput->ctx,
         0,
-        &lineBuf,
+        &screen->tempBuf,
         cmdInput->elem.x + 1,
         cmdInput->elem.y,
         cmdInput->elem.w - 1,

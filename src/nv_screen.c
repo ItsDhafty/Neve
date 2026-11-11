@@ -15,6 +15,7 @@ void screenInit(Screen *screen) {
     screen->w = 0;
     screen->h = 0;
     strInit(&screen->buf, 0);
+    strInit(&screen->tempBuf, 0);
     screen->editRows = NULL;
     screen->displayRows = NULL;
     screen->editStyles = NULL;
@@ -23,9 +24,12 @@ void screenInit(Screen *screen) {
 
 void screenDestroy(Screen *screen) {
     strDestroy(&screen->buf);
+    strDestroy(&screen->tempBuf);
 
     memFree(screen->editRows);
     memFree(screen->displayRows);
+    memFree(screen->editStyles);
+    memFree(screen->displayStyles);
     screen->w = 0;
     screen->h = 0;
     screen->editRows = NULL;

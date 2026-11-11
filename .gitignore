@@ -2,6 +2,8 @@
 .cache/
 .vs/
 .DS_Store
+.neve.log
+neve.log
 
 build/
 build_*/

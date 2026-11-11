@@ -6,6 +6,7 @@
 #include "nv_escapes.h"
 #include "nv_term.h"
 #include "nv_time.h"
+#include "nv_logging.h"
 
 Editor g_ed = { 0 };
 int32_t g_mapMove;
@@ -24,6 +25,7 @@ void editorInit(void) {
     g_ed._mode = EditorMode_Normal;
     g_ed.running = true;
 
+    g_ed.cmdResult = NULL;
     arrAppend(&g_ed.commands, cmdEntryNew("q", cmdQuit));
 #ifdef NV_DEBUG
     // fq is too easy to type and can lead to slip-ups but it is useful when
@@ -53,8 +55,15 @@ void editorInit(void) {
 }
 
 void editorQuit(void) {
+    uiDestroy(&g_ed.ui);
     screenDestroy(&g_ed.screen);
     bufMapDestroy(&g_ed.buffers);
+    for (size_t i = 0; i < g_ed.commands.len; i++) {
+        memFree(g_ed.commands.items[i]);
+    }
+    arrClear(&g_ed.commands);
+    memFree(g_ed.cmdResult);
+
     bindQuit();
     termWrite(sLen(
         escScreenClear
@@ -252,17 +261,8 @@ bool editorOpen(const char *path) {
     switch (fileOpen(&file, path, FileMode_Read)) {
     case FileIOResult_Success:
         bufClose(&g_ed.buffers, g_ed.ui.bufPanel.bufHd);
-        if (
-            bufInitFromFile(
-                &g_ed.buffers,
-                &file,
-                &newBuf
-            ).kind != BufResult_Success
-        ) {
-            success = false;
-fileClose(&file);
-            break;
-        }
+        success = bufInitFromFile(&g_ed.buffers, &file, &newBuf)
+                  .kind == BufResult_Success;
         fileClose(&file);
         break;
     case FileIOResult_FileNotFound:

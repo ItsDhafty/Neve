@@ -72,6 +72,7 @@ typedef struct ScreenRows {
 typedef struct {
     uint16_t w, h;
     Str buf;
+    Str tempBuf;
     ScreenRows *editRows;
     ScreenRows *displayRows;
     ScreenStyle *editStyles;

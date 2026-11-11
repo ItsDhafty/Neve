@@ -35,6 +35,10 @@ void uiInit(UI *ui) {
     uiCmdInputInit(&ui->cmdInput);
 }
 
+void uiDestroy(UI *ui) {
+    uiCmdInputDestroy(&ui->cmdInput);
+}
+
 void uiResize(UI *ui, uint16_t w, uint16_t h) {
     ui->elem.w = w;
     ui->elem.h = h;
@@ -68,6 +72,10 @@ void uiCmdInputInit(UICmdInput *cmdInput) {
     _uiElemInit(&cmdInput->elem, (UIUpdater)_uiCmdInputUpdater);
     ctxInit(&cmdInput->ctx, false);
     cmdInput->state = UICmdInput_Canceled;
+}
+
+void uiCmdInputDestroy(UICmdInput *cmdInput) {
+    ctxDestroy(&cmdInput->ctx);
 }
 
 static void _uiUpdater(UI *ui) {
