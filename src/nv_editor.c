@@ -392,14 +392,35 @@ static void _addMovementMap(void) {
 }
 
 static void _addGenericMovementKeys(int32_t map) {
-    // TODO: Many more useful movement keys
     mkCtxBind(map, ctxCurMoveBack, Key_Left);
     mkCtxBind(map, ctxCurMoveFwd, Key_Right);
     mkCtxBind(map, ctxCurMoveUp, Key_Up);
     mkCtxBind(map, ctxCurMoveDown, Key_Down);
 
-    mkCtxBind(g_mapEdit, ctxCurMoveToLineStart, KeyCtrl('a')); // Home
-    mkCtxBind(g_mapEdit, ctxCurMoveToLineEnd, KeyCtrl('e')); // End
+    mkCtxBind(map, ctxCurMoveToLineStart, Key_Home);
+    mkCtxBind(map, ctxCurMoveToLineEnd, Key_End);
+    mkCtxBind(map, ctxCurMoveToLineStart, KeySuper(Key_Left));
+    mkCtxBind(map, ctxCurMoveToLineEnd, KeySuper(Key_Right));
+
+    mkCtxBind(map, ctxCurMoveToTextStart, KeyCtrl(Key_Home));
+    mkCtxBind(map, ctxCurMoveToTextEnd, KeyCtrl(Key_End));
+    mkCtxBind(map, ctxCurMoveToTextStart, KeySuper(Key_Home));
+    mkCtxBind(map, ctxCurMoveToTextEnd, KeySuper(Key_End));
+
+    mkCtxBind(map, ctxCurMoveToPrevWordStart, KeyAlt(Key_Left));
+    mkCtxBind(map, ctxCurMoveToNextWordEnd, KeyAlt(Key_Right));
+    mkCtxBind(map, ctxCurMoveToPrevWordStart, KeyCtrl(Key_Left));
+    mkCtxBind(map, ctxCurMoveToNextWordEnd, KeyCtrl(Key_Right));
+
+    mkCtxBind(map, ctxCurMoveToPrevParagraph, KeyCtrl(Key_Up));
+    mkCtxBind(map, ctxCurMoveToNextParagraph, KeyCtrl(Key_Down));
+
+    bindAdd(g_mapMove, BindSeq(Key_PageUp), (Bind){
+        .callback = BindCBPtr(_callPanelCB, uiBufPanelMoveHalfUp)
+    });
+    bindAdd(g_mapMove, BindSeq(Key_PageDown), (Bind){
+        .callback = BindCBPtr(_callPanelCB, uiBufPanelMoveHalfDown)
+    });
 }
 
 static void _addNormalMode(void) {
