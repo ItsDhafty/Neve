@@ -6,7 +6,6 @@
 #include "nv_escapes.h"
 #include "nv_term.h"
 #include "nv_time.h"
-#include "nv_logging.h"
 
 Editor g_ed = { 0 };
 int32_t g_mapMove;
@@ -697,6 +696,8 @@ static void _insertTextCB(BindKeys keys) {
     Key cp = keys[0];
     if (cp == Key_Enter || cp == KeyCtrl('j')) {
         cp = '\n';
+    } else if (cp == Key_Tab) {
+        cp = '\t';
     }
     if (cp != '\n' || ctx->multiline) {
         ctxInsertCP(ctx, (UcdCP)cp);

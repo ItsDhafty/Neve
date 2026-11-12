@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <inttypes.h>
 
 #include "clib_threads.h"
 #include "nv_escapes.h"
@@ -8,6 +9,7 @@
 #include "nv_pool.h"
 #include "nv_term.h"
 #include "nv_time.h"
+#include "nv_utils.h"
 
 #define QueueNextIdx(idx) (((idx) + 1) % KeyQueueSize)
 #define KeyQueueSize 4096
@@ -164,6 +166,14 @@ static Key _tryParseKey(void) {
         return _charToKey(buf[0]);
     }
 
+    // logBeginLine(Log_Debug);
+    // logContLine("%c", buf[0]);
+    // for (size_t i = 1; i < len - 1; i++) {
+    //     logContLine("%s%"PRIu32, i == 1 ? "" : ";", buf[i]);
+    // }
+    // logContLine("%c", buf[len - 1]);
+    // logEndLine();
+
     uint32_t endCh = buf[len - 1];
     size_t argCount = len - 2;
     Key ret = 0;
@@ -189,7 +199,7 @@ static Key _tryParseKey(void) {
             return ret;
         } else if (argCount == 1) {
             return ret | ((buf[1] - 1) << 24);
-        } else {
+        } else if (argCount == 2) {
             return ret | ((buf[2] - 1) << 24);
         }
     } else if (endCh == 'u' && buf[0] == '[') {
@@ -360,8 +370,10 @@ bool keyInit(void) {
         g_pushedKittyFlags = false;
         termWrite(sLen(escKeyPopFlags));
     }
+    flags = 0;
 
 startThread:
+    logFmt(Log_Info, "Input flags: %"PRIu32, flags);
     if (!threadCreate(&g_inputThread, _inputThreadRoutine, NULL)) {
         errSetErrno();
         return false;

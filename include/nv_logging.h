@@ -16,5 +16,8 @@ bool logIsInit(void);
 void logQuit(void);
 
 nvUnixFmt(2, 3) void logFmt(LogLevel lvl, nvWinFmt const char *fmt, ...);
+void logBeginLine(LogLevel lvl);
+nvUnixFmt(1, 2) void logContLine(nvWinFmt const char *fmt, ...);
+void logEndLine(void);
 
 #endif // !NV_LOGGING_H_

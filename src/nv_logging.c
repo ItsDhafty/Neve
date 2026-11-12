@@ -9,8 +9,16 @@ static LogLevel g_minLevel = Log_Debug;
 #else
 static LogLevel g_minLevel = Log_Warning;
 #endif
+static LogLevel g_lineLevel = Log_Debug;
 static File g_logFile = { 0 };
 static ThreadMutex g_logMutex = ThreadMutexInitializer;
+
+const char *LevelStr[] = {
+    [Log_Debug]   = "[DEBUG]   ",
+    [Log_Info]    = "[INFO]    ",
+    [Log_Warning] = "[WARNING] ",
+    [Log_Error]   = "[ERROR]   ",
+};
 
 #ifdef _WIN32
 
@@ -68,26 +76,41 @@ void logQuit(void) {
 
 nvUnixFmt(2, 3) void logFmt(LogLevel lvl, nvWinFmt const char *fmt, ...) {
     if (lvl < g_minLevel) return;
-    switch (lvl) {
-    case Log_Debug:
-        fputs("[DEBUG]   ", g_logFile.fp);
-        break;
-    case Log_Info:
-        fputs("[INFO]    ", g_logFile.fp);
-        break;
-    case Log_Warning:
-        fputs("[WARNING] ", g_logFile.fp);
-        break;
-    case Log_Error:
-        fputs("[ERROR]   ", g_logFile.fp);
-        break;
-    }
-    va_list args;
     threadMutexLock(&g_logMutex);
+
+    fputs(LevelStr[lvl], g_logFile.fp);
+
+    va_list args;
     va_start(args, fmt);
     (void)vfprintf(g_logFile.fp, fmt, args);
     va_end(args);
+
     putc('\n', g_logFile.fp);
     fflush(g_logFile.fp);
+
+    threadMutexUnlock(&g_logMutex);
+}
+
+void logBeginLine(LogLevel lvl) {
+    threadMutexLock(&g_logMutex);
+    g_lineLevel = lvl;
+
+    if (lvl < g_minLevel) return;
+    fputs(LevelStr[lvl], g_logFile.fp);
+}
+
+nvUnixFmt(1, 2) void logContLine(nvWinFmt const char *fmt, ...) {
+    if (g_lineLevel < g_minLevel) return;
+    va_list args;
+    va_start(args, fmt);
+    (void)vfprintf(g_logFile.fp, fmt, args);
+    va_end(args);
+}
+
+void logEndLine(void) {
+    if (g_lineLevel >= g_minLevel) {
+        putc('\n', g_logFile.fp);
+        fflush(g_logFile.fp);
+    }
     threadMutexUnlock(&g_logMutex);
 }
